@@ -18,7 +18,7 @@ import random_wgsl::pcg_2u_3f;         // 2. use shader libraries from npm/cargo
 fn random_color(uv: vec2u) -> vec3f {
     var color = pcg_2u_3f(uv);
 
-    @if(DEBUG) color = chartreuse;       // 3. set conditions at runtime or build time
+    @if(DEBUG) color = chartreuse;     // 3. set conditions at runtime or build time
 
     return color;
 }
