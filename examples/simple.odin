@@ -3,7 +3,6 @@ package main
 
 import wesl ".."
 import "core:fmt"
-import "core:strings"
 
 main :: proc() {
 	// print version
@@ -48,7 +47,7 @@ main :: proc() {
 	)
 	defer wesl.free_result(&result)
 
-	if result.success {
+	if ok {
 		fmt.println("Compilation successful!")
 		fmt.printfln("Output:\n%s", result.data)
 
@@ -68,7 +67,7 @@ main :: proc() {
 		)
 		defer wesl.free_result(&eval_result)
 
-		if eval_result.success {
+		if eval_ok {
 			fmt.println("Evaluation successful!")
 			fmt.printfln("Result: %s (expected: 42u)", eval_result.data)
 			expected := "42u"

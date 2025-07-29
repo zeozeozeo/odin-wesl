@@ -1,7 +1,6 @@
 package wesl
 
 import "core:c"
-import "core:mem"
 import "core:strings"
 
 when ODIN_OS == .Windows do foreign import wesl_foreign {"lib/wesl-windows-x86_64-msvc-release/wesl_c.lib", "system:kernel32.lib", "system:ntdll.lib", "system:userenv.lib", "system:ws2_32.lib", "system:dbghelp.lib"}
