@@ -7,18 +7,17 @@ when ODIN_OS == .Windows do foreign import wesl_foreign {"lib/wesl-windows-x86_6
 when ODIN_OS == .Linux do foreign import wesl_foreign "lib/wesl-linux-x86_64-gnu-release/wesl_c.a"
 // TODO: when ODIN_OS == .Darwin do foreign import wesl_foreign "lib/wesl-i-have-no-clue-release/wesl_c.a"
 
-WeslCompiler :: distinct rawptr
-WeslCompileResult :: distinct rawptr
+Compiler :: distinct rawptr
 
 // -- enums
 
-WeslManglerKind :: enum c.int {
+Mangler_Kind :: enum c.int {
 	ESCAPE = 0,
 	HASH   = 1,
 	NONE   = 2,
 }
 
-WeslBindingType :: enum c.int {
+Binding_Type :: enum c.int {
 	UNIFORM            = 0,
 	STORAGE            = 1,
 	READ_ONLY_STORAGE  = 2,
@@ -37,16 +36,16 @@ WeslBindingType :: enum c.int {
 
 // -- structs
 
-WeslBinding :: struct {
+Binding :: struct {
 	group:    c.uint,
 	binding:  c.uint,
-	kind:     WeslBindingType,
+	kind:     Binding_Type,
 	data:     [^]u8,
 	data_len: c.size_t,
 }
 
-WeslCompileOptions :: struct {
-	mangler:     WeslManglerKind,
+Compile_Options :: struct {
+	mangler:     Mangler_Kind,
 	sourcemap:   bool,
 	imports:     bool,
 	condcomp:    bool,
@@ -60,79 +59,78 @@ WeslCompileOptions :: struct {
 	mangle_root: bool,
 }
 
-WeslStringMap :: struct {
+String_Map :: struct {
 	keys:   [^]cstring,
 	values: [^]cstring,
 	len:    c.size_t,
 }
 
-WeslBoolMap :: struct {
+Bool_Map :: struct {
 	keys:   [^]cstring,
 	values: [^]bool,
 	len:    c.size_t,
 }
 
-WeslStringArray :: struct {
+String_Array :: struct {
 	items: [^]cstring,
 	len:   c.size_t,
 }
 
-WeslBindingArray :: struct {
-	items: [^]WeslBinding,
+Binding_Array :: struct {
+	items: [^]Binding,
 	len:   c.size_t,
 }
 
-WeslDiagnostic :: struct {
+Diagnostic :: struct {
 	file:       cstring,
 	span_start: c.uint,
 	span_end:   c.uint,
 	title:      cstring,
 }
 
-WeslError :: struct {
+Error :: struct {
 	source:          cstring,
 	message:         cstring,
-	diagnostics:     [^]WeslDiagnostic,
+	diagnostics:     [^]Diagnostic,
 	diagnostics_len: c.size_t,
 }
 
-WeslResult :: struct {
+Wesl_Result :: struct {
 	success: bool,
 	data:    cstring,
-	error:   WeslError,
+	error:   Error,
 }
 
-WeslExecOptions :: struct {
-	compile:    WeslCompileOptions,
+Exec_Options :: struct {
+	compile:    Compile_Options,
 	entrypoint: cstring,
-	resources:  ^WeslBindingArray,
-	overrides:  ^WeslStringMap,
+	resources:  ^Binding_Array,
+	overrides:  ^String_Map,
 }
 
-WeslExecResult :: struct {
+Exec_Result :: struct {
 	success:   bool,
-	resources: ^WeslBindingArray,
-	error:     WeslError,
+	resources: ^Binding_Array,
+	error:     Error,
 }
 
 @(link_prefix = "wesl_", default_calling_convention = "c")
 foreign wesl_foreign {
-	create_compiler :: proc() -> ^WeslCompiler ---
-	destroy_compiler :: proc(compiler: ^WeslCompiler) ---
+	create_compiler :: proc() -> ^Compiler ---
+	destroy_compiler :: proc(compiler: ^Compiler) ---
 
 	@(link_name = "wesl_compile")
-	raw_compile :: proc(files: ^WeslStringMap, root: cstring, options: ^WeslCompileOptions, keep: ^WeslStringArray, features: ^WeslBoolMap) -> WeslResult ---
+	raw_compile :: proc(files: ^String_Map, root: cstring, options: ^Compile_Options, keep: ^String_Array, features: ^Bool_Map) -> Wesl_Result ---
 
 	@(link_name = "wesl_eval")
-	raw_eval :: proc(files: ^WeslStringMap, root: cstring, expression: cstring, options: ^WeslCompileOptions, features: ^WeslBoolMap) -> WeslResult ---
+	raw_eval :: proc(files: ^String_Map, root: cstring, expression: cstring, options: ^Compile_Options, features: ^Bool_Map) -> Wesl_Result ---
 
 	@(link_name = "wesl_exec")
-	raw_exec :: proc(files: ^WeslStringMap, root: cstring, entrypoint: cstring, options: ^WeslCompileOptions, resources: ^WeslBindingArray, overrides: ^WeslStringMap, features: ^WeslBoolMap) -> WeslExecResult ---
+	raw_exec :: proc(files: ^String_Map, root: cstring, entrypoint: cstring, options: ^Compile_Options, resources: ^Binding_Array, overrides: ^String_Map, features: ^Bool_Map) -> Exec_Result ---
 
 	free_string :: proc(ptr: cstring) ---
-	free_result :: proc(result: ^WeslResult) ---
-	free_compile_result :: proc(result: ^WeslCompileResult) ---
-	free_exec_result :: proc(result: ^WeslExecResult) ---
+	free_result :: proc(result: ^Wesl_Result) ---
+	free_exec_result :: proc(result: ^Exec_Result) ---
 
 	@(link_name = "wesl_version")
 	raw_version :: proc() -> cstring ---
@@ -141,7 +139,7 @@ foreign wesl_foreign {
 // -- helpers
 
 @(private)
-_make_string_map :: proc(m: map[string]string, allocator := context.allocator) -> WeslStringMap {
+_make_string_map :: proc(m: map[string]string, allocator := context.allocator) -> String_Map {
 	if len(m) == 0 {
 		return {}
 	}
@@ -156,11 +154,11 @@ _make_string_map :: proc(m: map[string]string, allocator := context.allocator) -
 		i += 1
 	}
 
-	return WeslStringMap{keys = raw_data(keys), values = raw_data(values), len = c.size_t(len(m))}
+	return String_Map{keys = raw_data(keys), values = raw_data(values), len = c.size_t(len(m))}
 }
 
 @(private)
-_free_string_map :: proc(m: ^WeslStringMap, allocator := context.allocator) {
+_free_string_map :: proc(m: ^String_Map, allocator := context.allocator) {
 	for i in 0 ..< m.len {
 		delete(m.keys[i], allocator)
 		delete(m.values[i], allocator)
@@ -168,7 +166,7 @@ _free_string_map :: proc(m: ^WeslStringMap, allocator := context.allocator) {
 }
 
 @(private)
-_make_bool_map :: proc(m: map[string]bool, allocator := context.allocator) -> WeslBoolMap {
+_make_bool_map :: proc(m: map[string]bool, allocator := context.allocator) -> Bool_Map {
 	if len(m) == 0 {
 		return {}
 	}
@@ -183,16 +181,16 @@ _make_bool_map :: proc(m: map[string]bool, allocator := context.allocator) -> We
 		i += 1
 	}
 
-	return WeslBoolMap{keys = raw_data(keys), values = raw_data(values), len = c.size_t(len(m))}
+	return Bool_Map{keys = raw_data(keys), values = raw_data(values), len = c.size_t(len(m))}
 }
 
 @(private)
-_free_bool_map :: proc(m: ^WeslBoolMap, allocator := context.allocator) {
+_free_bool_map :: proc(m: ^Bool_Map, allocator := context.allocator) {
 	for i in 0 ..< m.len do delete(m.keys[i], allocator)
 }
 
 @(private)
-_make_string_array :: proc(arr: []string, allocator := context.allocator) -> WeslStringArray {
+_make_string_array :: proc(arr: []string, allocator := context.allocator) -> String_Array {
 	if len(arr) == 0 {
 		return {}
 	}
@@ -202,11 +200,11 @@ _make_string_array :: proc(arr: []string, allocator := context.allocator) -> Wes
 		cstrings[i] = strings.clone_to_cstring(s, allocator)
 	}
 
-	return WeslStringArray{items = raw_data(cstrings), len = c.size_t(len(arr))}
+	return String_Array{items = raw_data(cstrings), len = c.size_t(len(arr))}
 }
 
 @(private)
-_free_string_array :: proc(arr: ^WeslStringArray, allocator := context.allocator) {
+_free_string_array :: proc(arr: ^String_Array, allocator := context.allocator) {
 	for i in 0 ..< arr.len do delete(arr.items[i], allocator)
 }
 
@@ -215,11 +213,11 @@ _free_string_array :: proc(arr: ^WeslStringArray, allocator := context.allocator
 compile :: proc(
 	files: map[string]string,
 	root: string,
-	options: ^WeslCompileOptions,
+	options: ^Compile_Options,
 	keep: []string = {},
 	features: map[string]bool = {},
 ) -> (
-	result: WeslResult,
+	result: Wesl_Result,
 	ok: bool,
 ) {
 	temp_allocator := context.temp_allocator
@@ -242,10 +240,10 @@ eval :: proc(
 	files: map[string]string,
 	root: string,
 	expression: string,
-	options: ^WeslCompileOptions,
+	options: ^Compile_Options,
 	features: map[string]bool = {},
 ) -> (
-	result: WeslResult,
+	result: Wesl_Result,
 	ok: bool,
 ) {
 	temp_allocator := context.temp_allocator
@@ -269,12 +267,12 @@ exec :: proc(
 	files: map[string]string,
 	root: string,
 	entrypoint: string,
-	options: ^WeslCompileOptions,
-	resources: ^WeslBindingArray,
+	options: ^Compile_Options,
+	resources: ^Binding_Array,
 	overrides: map[string]string = {},
 	features: map[string]bool = {},
 ) -> (
-	result: WeslExecResult,
+	result: Exec_Result,
 	ok: bool,
 ) {
 	temp_allocator := context.temp_allocator
