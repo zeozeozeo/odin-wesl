@@ -16,7 +16,7 @@ main :: proc() {
 	}
 
 	// setup compile options
-	options := wesl.WeslCompileOptions {
+	options := wesl.Compile_Options {
 		mangler     = .NONE,
 		sourcemap   = true,
 		imports     = true,
@@ -57,7 +57,7 @@ main :: proc() {
 		}
 
 		fmt.println("\ncalling wesl_eval...")
-		eval_options := wesl.WeslCompileOptions{}
+		eval_options := wesl.Compile_Options{}
 		eval_result, eval_ok := wesl.eval(
 			eval_files,
 			"package::source",
