@@ -292,7 +292,6 @@ exec :: proc(
 	entrypoint_cstr := strings.clone_to_cstring(entrypoint, temp_allocator)
 	defer delete(entrypoint_cstr, temp_allocator)
 
-	// Call the raw function
 	raw_result := raw_exec(
 		&files_map,
 		root_cstr,
