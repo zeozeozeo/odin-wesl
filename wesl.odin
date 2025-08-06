@@ -4,7 +4,7 @@ import "core:c"
 import "core:strings"
 
 when ODIN_OS == .Windows do foreign import wesl_foreign {"lib/wesl-windows-x86_64-msvc-release/wesl_c.lib", "system:kernel32.lib", "system:ntdll.lib", "system:userenv.lib", "system:ws2_32.lib", "system:dbghelp.lib"}
-when ODIN_OS == .Linux do foreign import wesl_foreign "lib/wesl-linux-x86_64-gnu-release/wesl_c.a"
+when ODIN_OS == .Linux do foreign import wesl_foreign "lib/wesl-linux-x86_64-gnu-release/libwesl_c.a"
 // TODO: when ODIN_OS == .Darwin do foreign import wesl_foreign "lib/wesl-i-have-no-clue-release/wesl_c.a"
 
 Compiler :: distinct rawptr
